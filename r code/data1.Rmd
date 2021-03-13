@@ -1,0 +1,157 @@
+---
+title: '0607'
+author: "Shanshan Hu"
+date: "6/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(glmnet) # ridge and lasso
+library(gam) # for gam
+library(pls) # pcr pls
+library(leaps) # regsubset
+library(MASS) # lda qda
+library(class) # knn
+library(caret) # knn with prob
+library(gbm) # boosting
+library(boot) # cross validation
+library(car) # vif, residual plots, partial residual plots
+library (ROCR) 
+library (pROC) # ROC AUC plot
+library(tree)
+library(randomForest)
+library(ranger) # Random Forest
+library(neuralnet) # DNN
+library(e1071) # SVM
+library(RandPro) # Random Projection Method 1
+
+library(pryr) # memory count
+library(MatrixModels) # sparse matrix representation
+```
+
+```{r}
+setwd("D:\\Merck challenge\\qsar_train")
+df1_x = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_1_train_x.csv") 
+df1_y = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_1_train_y.csv") 
+df1=cbind(df1_y,df1_x)
+idx <- sample(nrow(df1), 1/5 * nrow(df1))
+df1tr <- df1[-idx, ]
+df1t <- df1[idx, ]
+```
+
+## Sparse matrix represetation
+```{r}
+# View column summary
+summary(factor(df1$x1))
+pryr::object_size(df1)
+
+# df1_m=as.matrix(df1)
+# df1_m=  as(df1_m,"sparseMatrix")
+# pryr::object_size(df1_m)
+
+df1tr_m=as.matrix(df1tr)
+df1trs =  as(df1tr_m,"sparseMatrix")
+df1t_m=as.matrix(df1t)
+df1ts =  as(df1t_m,"sparseMatrix")
+pryr::object_size(df1trs)
+pryr::object_size(df1ts)
+```
+
+# Random Forest
+```{r}
+ptm = proc.time()
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+```
+
+```{r}
+preds <- predict(rfmod, data = df1ts)
+rmse <- sqrt(sum((preds$predictions - df1t$y)^2)/length(preds$predictions))
+rmse
+```
+
+# DNN
+```{r}
+ptm = proc.time()
+dnnmod = neuralnet(y~., data=df1tr)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+```
+
+```{r}
+dnnpred<-compute(dnnmod, df1t)
+pred_results<-dnnpred$net.result
+cor(pred_results, df1t$y)
+```
+
+# Random Projection
+```{r}
+d=c(0.1,0.3,0.5,0.7)
+dim=dimension(nrow(df1_x), epsilon = d)
+dim
+```
+
+```{r}
+ptm = proc.time()
+rp1=form_matrix(nrow(df1_x), 1169, FALSE, eps = 0.3, projection = "gaussian")
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+pryr::object_size(rp1)
+```
+```{r}
+rp1df=cbind(df1_y,rp1)
+idx <- sample(nrow(rp1df), 1/5 * nrow(rp1df))
+rp1tr <- rp1df[-idx, ]
+rp1t <- rp1df[idx, ]
+ptm = proc.time()
+rfmod_rp = ranger(dependent.variable.name = "y",data=rp1tr)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds_rp <- predict(rfmod_rp, data = rp1t)
+rmse_rp <- sqrt(sum((preds_rp$predictions - rp1t$y)^2)/length(preds_rp$predictions))
+rmse_rp
+```
+
+```{r}
+rp11=form_matrix(nrow(df1_x), 322, FALSE, eps = 0.7, projection = "gaussian")
+rp11df=cbind(df1_y,rp11)
+idx <- sample(nrow(rp11df), 1/5 * nrow(rp11df))
+rp11tr <- rp11df[-idx, ]
+rp11t <- rp11df[idx, ]
+ptm = proc.time()
+rfmod_rp = ranger(dependent.variable.name = "y",data=rp11tr)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds_rp <- predict(rfmod_rp, data = rp11t)
+rmse_rp <- sqrt(sum((preds_rp$predictions - rp11t$y)^2)/length(preds_rp$predictions))
+rmse_rp
+```
+
+
+```{r}
+rp2=form_matrix(nrow(df1_x), 322, FALSE, eps = 0.7, projection = "probability")
+rp2df=cbind(df1_y,rp2)
+idx <- sample(nrow(rp2df), 1/5 * nrow(rp2df))
+rp2tr <- rp2df[-idx, ]
+rp2t <- rp2df[idx, ]
+ptm = proc.time()
+rfmod_rp = ranger(dependent.variable.name = "y",data=rp2tr)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds_rp <- predict(rfmod_rp, data = rp2t)
+rmse_rp <- sqrt(sum((preds_rp$predictions - rp2t$y)^2)/length(preds_rp$predictions))
+rmse_rp
+```
+
+
+
+
+
+

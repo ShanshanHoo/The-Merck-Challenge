@@ -1,0 +1,264 @@
+---
+title: '0607'
+author: "Shanshan Hu"
+date: "6/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(glmnet) # ridge and lasso
+library(gam) # for gam
+library(pls) # pcr pls
+library(leaps) # regsubset
+library(MASS) # lda qda
+library(class) # knn
+library(caret) # knn with prob
+library(gbm) # boosting
+library(boot) # cross validation
+library(car) # vif, residual plots, partial residual plots
+library (ROCR) 
+library (pROC) # ROC AUC plot
+library(tree)
+library(randomForest)
+library(ranger) # Random Forest
+library(neuralnet) # DNN
+library(e1071) # SVM
+library(RandPro) # Random Projection Method 1
+
+library(pryr) # memory count
+library(MatrixModels) # sparse matrix representation
+```
+
+```{r}
+setwd("D:\\Merck challenge\\qsar_train")
+df1_x = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_4_train_x.csv") 
+df1_y = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_4_train_y.csv") 
+df1=cbind(df1_y,df1_x)
+# View column summary
+summary(factor(df1$x1))
+```
+
+# Sparse matrix represetation
+```{r}
+set.seed(1)
+pryr::object_size(df1)
+idx <- sample(nrow(df1), 1/5 * nrow(df1))
+df1tr <- df1[-idx, ]
+df1t <- df1[idx, ]
+
+df1tr_m=as.matrix(df1tr)
+df1trs =  as(df1tr_m,"sparseMatrix")
+df1t_m=as.matrix(df1t)
+df1ts =  as(df1t_m,"sparseMatrix")
+pryr::object_size(df1trs)
+pryr::object_size(df1ts)
+```
+
+# Random Forest without random projection
+```{r}
+# CV1
+set.seed(1)
+ptm = proc.time()
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds <- predict(rfmod, data = df1ts)
+rmse1 <- sqrt(sum((preds$predictions - df1t$y)^2)/length(preds$predictions))
+rmse1
+r21 <- 1-sum((preds$predictions - df1t$y)^2)/sum((df1t$y - mean(df1t$y))^2)
+```
+
+```{r}
+# CV2
+set.seed(1)
+idx2 <- sample(nrow(df1tr), 1/4 * nrow(df1tr))
+df1ttr <- rbind(df1t,df1tr[-idx2,])
+df1trt <- df1tr[idx2, ]
+
+df1tr_m=as.matrix(df1ttr)
+df1trs =  as(df1tr_m,"sparseMatrix")
+df1t_m=as.matrix(df1trt)
+df1ts =  as(df1t_m,"sparseMatrix")
+
+ptm = proc.time()
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds <- predict(rfmod, data = df1ts)
+rmse2 <- sqrt(sum((preds$predictions - df1trt$y)^2)/length(preds$predictions))
+rmse2
+r22 <- 1-sum((preds$predictions - df1trt$y)^2)/sum((df1trt$y - mean(df1trt$y))^2)
+```
+
+```{r}
+# CV3
+set.seed(1)
+cv3<-df1tr[-idx2,]
+idx3 <- sample(nrow(cv3), 1/3 * nrow(cv3))
+df1ttrtr <- rbind(df1trt,cv3[-idx3,])
+df1trtt <- cv3[idx3,]
+
+df1tr_m=as.matrix(df1ttrtr)
+df1trs =  as(df1tr_m,"sparseMatrix")
+df1t_m=as.matrix(df1trtt)
+df1ts =  as(df1t_m,"sparseMatrix")
+
+ptm = proc.time()
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds <- predict(rfmod, data = df1ts)
+rmse3 <- sqrt(sum((preds$predictions - df1trtt$y)^2)/length(preds$predictions))
+rmse3
+r23 <- 1-sum((preds$predictions - df1trtt$y)^2)/sum((df1trtt$y - mean(df1trtt$y))^2)
+```
+
+```{r}
+# CV4
+set.seed(1)
+cv4<-cv3[-idx3,]
+idx4 <- sample(nrow(cv4), 1/2 * nrow(cv4))
+df1trtttr <- rbind(df1trtt,cv4[-idx4,])
+df1ttrtrt <- cv4[idx4,]
+
+df1tr_m=as.matrix(df1trtttr)
+df1trs =  as(df1tr_m,"sparseMatrix")
+df1t_m=as.matrix(df1ttrtrt)
+df1ts =  as(df1t_m,"sparseMatrix")
+
+ptm = proc.time()
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds <- predict(rfmod, data = df1ts)
+rmse4 <- sqrt(sum((preds$predictions - df1ttrtrt$y)^2)/length(preds$predictions))
+rmse4
+r24 <- 1-sum((preds$predictions - df1ttrtrt$y)^2)/sum((df1ttrtrt$y - mean(df1ttrtrt$y))^2)
+```
+
+```{r}
+# CV5
+set.seed(1)
+cv5<-cv4[-idx4,]
+idx5 <- sample(nrow(cv5), 1/2 * nrow(cv5))
+df1trtttrtr <- rbind(df1ttrtrt,cv5[-idx5,])
+df1ttrtrtt <- cv5[idx5,]
+
+df1tr_m=as.matrix(df1trtttrtr)
+df1trs =  as(df1tr_m,"sparseMatrix")
+df1t_m=as.matrix(df1ttrtrtt)
+df1ts =  as(df1t_m,"sparseMatrix")
+
+ptm = proc.time()
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds <- predict(rfmod, data = df1ts)
+rmse5 <- sqrt(sum((preds$predictions - df1ttrtrtt$y)^2)/length(preds$predictions))
+rmse5
+r25 <- 1-sum((preds$predictions - df1ttrtrtt$y)^2)/sum((df1ttrtrtt$y - mean(df1ttrtrtt$y))^2)
+# error cross-validated
+(rmse1+rmse2+rmse3+rmse4+rmse5)/5
+(r21+r22+r23+r24+r25)/5
+```
+
+## Random Projection
+```{r}
+# dimensionality
+d=c(0.1,0.3,0.5,0.7)
+dim=dimension(nrow(df1_x), epsilon = d)
+dim
+```
+
+Processing time for random projection. And processing time and cross-validated error rate for one iteration of random forest.
+```{r}
+set.seed(1)
+ptm = proc.time()
+rp1=form_matrix(nrow(df1_x), 833, FALSE, eps = 0.3, projection = "gaussian")
+write.csv(rp1,"4rp1g3.csv")
+time_spent = proc.time() - ptm
+paste("Random Projection time:", round(time_spent[3]),"seconds")
+pryr::object_size(rp1)
+
+set.seed(1)
+rp1df=cbind(df1_y,rp1)
+ptm = proc.time()
+rfmod_rp = ranger(dependent.variable.name = "y",data=rp1df)
+time_spent = proc.time() - ptm
+paste("Random Forest one iteration time:", round(time_spent[3]),"seconds")
+
+rfcv=rfcv(rp1,rp1df$y,cv.fold = 5)
+rfcv$error.cv
+#with(rfcv, plot(n.var, error.cv, type="b", col="red"))
+```
+
+# Function of cross-validated error rate for one iteration of random forest.
+```{r}
+rp.cverror <- function(ncols,epsilon,method="gaussian",fname){
+  rp11=form_matrix(ncol(df1_x), ncols, FALSE, eps = epsilon, projection = method)
+  rrp11=as.matrix(df1_x)%*%rp11
+  write.csv(rp11,fname)
+  rp11df=cbind(df1_y,rrp11)
+  rfcv2=rfcv(rp11df,rp11df$y,cv.fold = 5)
+
+  return(rfcv2$error.cv)
+  }
+```
+
+# Gaussian Dimension:833 Epsilon:0.3
+```{r}
+rfcv$error.cv
+rp.cverror(833,0.3,"gaussian","4rp2g3.csv")
+rp.cverror(833,0.3,"gaussian","4rp3g3.csv")
+rp.cverror(833,0.3,"gaussian","4rp4g3.csv")
+rp.cverror(833,0.3,"gaussian","4rp5g3.csv")
+```
+# Gaussian Dimension:229 Epsilon:0.7
+```{r}
+rp.cverror(229,0.7,"gaussian","4rp1g7.csv")
+rp.cverror(229,0.7,"gaussian","4rp2g7.csv")
+rp.cverror(229,0.7,"gaussian","4rp3g7.csv")
+rp.cverror(229,0.7,"gaussian","4rp4g7.csv")
+rp.cverror(229,0.7,"gaussian","4rp5g7.csv")
+```
+# Probability Dimension:833 Epsilon:0.3
+```{r}
+rp.cverror(833,0.3,"probability","4rp1p3.csv")
+rp.cverror(833,0.3,"probability","4rp2p3.csv")
+rp.cverror(833,0.3,"probability","4rp3p3.csv")
+rp.cverror(833,0.3,"probability","4rp4p3.csv")
+rp.cverror(833,0.3,"probability","4rp5p3.csv")
+```
+# Probability Dimension:229 Epsilon:0.7
+```{r}
+rp.cverror(229,0.7,"probability","4rp1p7.csv")
+rp.cverror(229,0.7,"probability","4rp2p7.csv")
+rp.cverror(229,0.7,"probability","4rp3p7.csv")
+rp.cverror(229,0.7,"probability","4rp4p7.csv")
+rp.cverror(229,0.7,"probability","4rp5p7.csv")
+```
+# Achlioptas Dimension:833 Epsilon:0.3
+```{r}
+rp.cverror(833,0.3,"achlioptas","4rp1a3.csv")
+rp.cverror(833,0.3,"achlioptas","4rp2a3.csv")
+rp.cverror(833,0.3,"achlioptas","4rp3a3.csv")
+rp.cverror(833,0.3,"achlioptas","4rp4a3.csv")
+rp.cverror(833,0.3,"achlioptas","4rp5a3.csv")
+```
+# Achlioptas Dimension:229 Epsilon:0.7
+```{r}
+rp.cverror(229,0.7,"achlioptas","4rp1a7.csv")
+rp.cverror(229,0.7,"achlioptas","4rp2a7.csv")
+rp.cverror(229,0.7,"achlioptas","4rp3a7.csv")
+rp.cverror(229,0.7,"achlioptas","4rp4a7.csv")
+rp.cverror(229,0.7,"achlioptas","4rp5a7.csv")
+```
+

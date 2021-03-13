@@ -1,0 +1,147 @@
+---
+title: "PCA"
+author: "Shanshan Hu"
+date: "7/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(glmnet) # ridge and lasso
+library(gam) # for gam
+library(pls) # pcr pls
+library(leaps) # regsubset
+library(MASS) # lda qda
+library(class) # knn
+library(caret) # knn with prob
+library(gbm) # boosting
+library(boot) # cross validation
+library(car) # vif, residual plots, partial residual plots
+library (ROCR) 
+library (pROC) # ROC AUC plot
+library(tree)
+library(randomForest)
+library(ranger) # Random Forest
+library(neuralnet) # DNN
+library(e1071) # SVM
+library(RandPro) # Random Projection Method 1
+
+library(pryr) # memory count
+library(MatrixModels) # sparse matrix representation
+library(parallel)
+library(doParallel)
+```
+
+# Calculate dimension for comps explain 95% and 70% of variance
+```{r}
+setwd("D:\\Merck challenge\\qsar_train")
+df1_x = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_1_train_x.csv") 
+df1_y = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_1_train_y.csv") 
+
+ptm = proc.time()
+pr.out =prcomp (df1_x, scale =TRUE)
+# the principal component loadings
+# pr.out$rotation
+# the variance explained by each principal component
+pr.var =pr.out$sdev ^2
+pve=pr.var/sum(pr.var )
+#pve
+cumsum(pve)>=0.95
+cumsum(pve)>=0.70
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+```
+
+# 95% variance explained with 2520 comp
+# 70% variance explained with 672 comp
+```{r}
+ptm = proc.time()
+preproc <- preProcess(df1_x, method="pca", pcaComp=2520)
+train.pca<-predict(preproc, df1_x) ## PCA variables are created
+df1s=cbind(df1_y,train.pca)
+set.seed(1)
+idx <- sample(nrow(df1s), 1/5 * nrow(df1s))
+df1trs <- df1s[-idx, ]
+df1ts <- df1s[idx, ]
+
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds <- predict(rfmod, data = df1ts)
+rmse1 <- sqrt(sum((preds$predictions - df1ts$y)^2)/length(preds$predictions))
+rmse1
+rsq1 <- 1-sum((preds$predictions - df1ts$y)^2)/sum((df1ts$y - mean(df1ts$y))^2)
+rsq1
+
+# rf.cv <- rfcv(train.pca, df1_y, cv.fold=5)
+# rf.cv$error.cv
+```
+
+```{r}
+ptm = proc.time()
+preproc <- preProcess(df1_x, method="pca", pcaComp=672)
+train.pca<-predict(preproc, df1_x) ## PCA variables are created
+df1s=cbind(df1_y,train.pca)
+set.seed(1)
+idx <- sample(nrow(df1s), 1/5 * nrow(df1s))
+df1trs <- df1s[-idx, ]
+df1ts <- df1s[idx, ]
+
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds <- predict(rfmod, data = df1ts)
+rmse1 <- sqrt(sum((preds$predictions - df1ts$y)^2)/length(preds$predictions))
+rmse1
+rsq1 <- 1-sum((preds$predictions - df1ts$y)^2)/sum((df1ts$y - mean(df1ts$y))^2)
+rsq1
+```
+
+# Random projection's dimension
+```{r}
+ptm = proc.time()
+preproc <- preProcess(df1_x, method="pca", pcaComp=1169)
+train.pca<-predict(preproc, df1_x) ## PCA variables are created
+df1s=cbind(df1_y,train.pca)
+set.seed(1)
+idx <- sample(nrow(df1s), 1/5 * nrow(df1s))
+df1trs <- df1s[-idx, ]
+df1ts <- df1s[idx, ]
+
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds <- predict(rfmod, data = df1ts)
+rmse1 <- sqrt(sum((preds$predictions - df1ts$y)^2)/length(preds$predictions))
+rmse1
+rsq1 <- 1-sum((preds$predictions - df1ts$y)^2)/sum((df1ts$y - mean(df1ts$y))^2)
+rsq1
+```
+
+```{r}
+ptm = proc.time()
+preproc <- preProcess(df1_x, method="pca", pcaComp=322)
+train.pca<-predict(preproc, df1_x) ## PCA variables are created
+df1s=cbind(df1_y,train.pca)
+set.seed(1)
+idx <- sample(nrow(df1s), 1/5 * nrow(df1s))
+df1trs <- df1s[-idx, ]
+df1ts <- df1s[idx, ]
+
+rfmod = ranger(dependent.variable.name = "y",data=df1trs)
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+
+preds <- predict(rfmod, data = df1ts)
+rmse1 <- sqrt(sum((preds$predictions - df1ts$y)^2)/length(preds$predictions))
+rmse1
+rsq1 <- 1-sum((preds$predictions - df1ts$y)^2)/sum((df1ts$y - mean(df1ts$y))^2)
+rsq1
+```
+
+

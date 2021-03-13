@@ -1,0 +1,68 @@
+---
+title: '0607'
+author: "Shanshan Hu"
+date: "6/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(glmnet) # ridge and lasso
+library(gam) # for gam
+library(pls) # pcr pls
+library(leaps) # regsubset
+library(MASS) # lda qda
+library(class) # knn
+library(caret) # knn with prob
+library(gbm) # boosting
+library(boot) # cross validation
+library(car) # vif, residual plots, partial residual plots
+library (ROCR) 
+library (pROC) # ROC AUC plot
+library(tree)
+library(randomForest)
+library(ranger) # Random Forest
+library(neuralnet) # DNN
+library(e1071) # SVM
+library(RandPro) # Random Projection Method 1
+
+library(pryr) # memory count
+library(MatrixModels) # sparse matrix representation
+```
+
+```{r}
+setwd("D:\\Merck challenge\\qsar_train")
+#x = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_1_train_x.csv") 
+y = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_7_train_y.csv") 
+```
+
+# Achlioptas Epsilon:0.7
+``` {r message=FALSE}
+set.seed(1)
+setwd("D:\\Merck challenge\\qsar_rp")
+df1_x = read_csv("result7rp1a7.csv")
+df1=cbind(y,df1_x[,-1])
+  
+fit=randomForest(y~., data=df1)
+VI_F=randomForest::importance(fit)
+
+rpm=read_csv("7rp1a7.csv")
+rpm=rpm[,-1]
+
+pm.indx=order(-VI_F)[1:100] 
+coef.mx=rpm[,pm.indx] 
+coef.mx=apply(coef.mx,2,function(x){x/sum(x)})
+
+order(-rowSums(abs(coef.mx)))[1:10]
+
+
+pm.indx=order(-VI_F)[1:20] 
+coef.mx=rpm[,pm.indx] 
+coef.mx=apply(coef.mx,2,function(x){x/sum(x)})
+
+order(-rowSums(abs(coef.mx)))[1:10]
+# e=which(x!=0,arr.ind = T)
+# f=colSums(x != 0)
+```

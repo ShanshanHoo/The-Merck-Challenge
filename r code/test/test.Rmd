@@ -1,0 +1,111 @@
+---
+title: "test"
+author: "Shanshan Hu"
+date: "7/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(glmnet) # ridge and lasso
+library(gam) # for gam
+library(pls) # pcr pls
+library(leaps) # regsubset
+library(MASS) # lda qda
+library(class) # knn
+library(caret) # knn with prob
+library(gbm) # boosting
+library(boot) # cross validation
+library(car) # vif, residual plots, partial residual plots
+library (ROCR) 
+library (pROC) # ROC AUC plot
+library(tree)
+library(randomForest)
+library(ranger) # Random Forest
+library(neuralnet) # DNN
+library(e1071) # SVM
+library(RandPro) # Random Projection Method 1
+
+library(pryr) # memory count
+library(MatrixModels) # sparse matrix representation
+```
+
+```{r}
+setwd("D:\\Merck challenge\\qsar_test")
+df1t_x = read_csv("QSAR_15_test_x.csv")
+df1t_y = read_csv("QSAR_15_test_y.csv")
+
+setwd("D:\\Merck challenge\\qsar_train")
+df1_y = read_csv("QSAR_15_train_y.csv")
+
+trdf={}
+```
+#Achlioptas Epsilon:0.3
+```{r}
+setwd("D:\\Merck challenge\\qsar_rp")
+df1_x = read_csv("result15rp1a3.csv")
+df1=cbind(df1_y,df1_x[,-1])
+rpm = read_csv("15rp1a3.csv")
+rpm=rpm[,-1]
+rpt_x=as.matrix(df1t_x)%*%as.matrix(rpm)
+df1t=cbind(df1t_y,rpt_x)
+  
+rfmod = ranger(dependent.variable.name = "y",data=df1)
+  
+preds <- predict(rfmod, data = df1t)
+rmse <- sqrt(sum((preds$predictions - df1t$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - df1t$y)^2)/sum((df1t$y - mean(df1t$y))^2)
+  
+trdf=rbind(trdf,c(RMSE=rmse,RSquared=rsq))
+```
+#Achlioptas Epsilon:0.5
+```{r}
+setwd("D:\\Merck challenge\\qsar_rp")
+df1_x = read_csv("result15rp1a5.csv")
+df1=cbind(df1_y,df1_x[,-1])
+rpm = read_csv("15rp1a5.csv")
+rpm=rpm[,-1]
+rpt_x=as.matrix(df1t_x)%*%as.matrix(rpm)
+df1t=cbind(df1t_y,rpt_x)
+  
+rfmod = ranger(dependent.variable.name = "y",data=df1)
+  
+preds <- predict(rfmod, data = df1t)
+rmse <- sqrt(sum((preds$predictions - df1t$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - df1t$y)^2)/sum((df1t$y - mean(df1t$y))^2)
+  
+trdf=rbind(trdf,c(RMSE=rmse,RSquared=rsq))
+```
+#Achlioptas Epsilon:0.7
+```{r}
+setwd("D:\\Merck challenge\\qsar_rp")
+df1_x = read_csv("result15rp1a7.csv")
+df1=cbind(df1_y,df1_x[,-1])
+rpm = read_csv("15rp1a7.csv")
+rpm=rpm[,-1]
+rpt_x=as.matrix(df1t_x)%*%as.matrix(rpm)
+df1t=cbind(df1t_y,rpt_x)
+  
+rfmod = ranger(dependent.variable.name = "y",data=df1)
+  
+preds <- predict(rfmod, data = df1t)
+rmse <- sqrt(sum((preds$predictions - df1t$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - df1t$y)^2)/sum((df1t$y - mean(df1t$y))^2)
+  
+trdf=rbind(trdf,c(RMSE=rmse,RSquared=rsq))
+```
+
+# Write output files
+```{r}
+write.csv(trdf,"15Rftest100.csv")
+```
+
+
+
+
+
+
+
+

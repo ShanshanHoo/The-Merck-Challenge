@@ -1,0 +1,143 @@
+---
+title: '0607'
+author: "Shanshan Hu"
+date: "6/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(glmnet) # ridge and lasso
+library(gam) # for gam
+library(pls) # pcr pls
+library(leaps) # regsubset
+library(MASS) # lda qda
+library(class) # knn
+library(caret) # knn with prob
+library(gbm) # boosting
+library(boot) # cross validation
+library(car) # vif, residual plots, partial residual plots
+library (ROCR) 
+library (pROC) # ROC AUC plot
+library(tree)
+library(randomForest)
+library(ranger) # Random Forest
+library(neuralnet) # DNN
+library(e1071) # SVM
+library(RandPro) # Random Projection Method 1
+
+library(pryr) # memory count
+library(MatrixModels) # sparse matrix representation
+```
+
+# Function for outputting RMSE and R-squared
+```{r}
+setwd("D:\\Merck challenge\\qsar_train")
+df1_y = read_csv("QSAR_6_train_y.csv")
+
+rp.rf <- function(xpath){
+  setwd("D:\\Merck challenge\\qsar_rp")
+  df1_x = read_csv(xpath)
+  df1=cbind(df1_y,df1_x[,-1])
+  
+  ptm = proc.time()
+  idx <- sample(nrow(df1), 1/5 * nrow(df1))
+  df1tr <- df1[-idx, ]
+  df1t <- df1[idx, ]
+  rfmod = ranger(dependent.variable.name = "y",data=df1tr)
+  time_spent = proc.time() - ptm
+  
+  preds <- predict(rfmod, data = df1t)
+  rmse1 <- sqrt(sum((preds$predictions - df1t$y)^2)/length(preds$predictions))
+  rsq1 <- 1-sum((preds$predictions - df1t$y)^2)/sum((df1t$y - mean(df1t$y))^2)
+  
+  outputs=list(dim(df1_x[,-1]),time_spent[3],rmse1,rsq1)
+  return(outputs)
+  }
+```
+
+# Gaussian Epsilon:0.3
+``` {r message=FALSE}
+set.seed(1)
+rp.rf("result6rp1g3.csv" )
+rp.rf("result6rp2g3.csv" )
+rp.rf("result6rp3g3.csv" )
+rp.rf("result6rp4g3.csv" )
+rp.rf("result6rp5g3.csv" )
+```
+# Gaussian Epsilon:0.5
+``` {r message=FALSE}
+set.seed(1)
+rp.rf("result6rp1g5.csv" )
+rp.rf("result6rp2g5.csv" )
+rp.rf("result6rp3g5.csv" )
+rp.rf("result6rp4g5.csv" )
+rp.rf("result6rp5g5.csv" )
+```
+# Gaussian Epsilon:0.7
+``` {r message=FALSE}
+set.seed(1)
+rp.rf("result6rp1g7.csv" )
+rp.rf("result6rp2g7.csv" )
+rp.rf("result6rp3g7.csv" )
+rp.rf("result6rp4g7.csv" )
+rp.rf("result6rp5g7.csv" )
+```
+# Probability Epsilon:0.3
+``` {r message=FALSE}
+set.seed(1)
+rp.rf("result6rp1p3.csv" )
+rp.rf("result6rp2p3.csv" )
+rp.rf("result6rp3p3.csv" )
+rp.rf("result6rp4p3.csv" )
+rp.rf("result6rp5p3.csv" )
+```
+# Probability Epsilon:0.5
+``` {r message=FALSE}
+set.seed(1)
+rp.rf("result6rp1p5.csv" )
+rp.rf("result6rp2p5.csv" )
+rp.rf("result6rp3p5.csv" )
+rp.rf("result6rp4p5.csv" )
+rp.rf("result6rp5p5.csv" )
+```
+# Probability Epsilon:0.7
+``` {r message=FALSE}
+set.seed(1)
+rp.rf("result6rp1p7.csv" )
+rp.rf("result6rp2p7.csv" )
+rp.rf("result6rp3p7.csv" )
+rp.rf("result6rp4p7.csv" )
+rp.rf("result6rp5p7.csv" )
+```
+# Achlioptas Epsilon:0.3
+``` {r message=FALSE}
+set.seed(1)
+rp.rf("result6rp1a3.csv" )
+rp.rf("result6rp2a3.csv" )
+rp.rf("result6rp3a3.csv" )
+rp.rf("result6rp4a3.csv" )
+rp.rf("result6rp5a3.csv" )
+```
+# Achlioptas Epsilon:0.5
+``` {r message=FALSE}
+set.seed(1)
+rp.rf("result6rp1a5.csv" )
+rp.rf("result6rp2a5.csv" )
+rp.rf("result6rp3a5.csv" )
+rp.rf("result6rp4a5.csv" )
+rp.rf("result6rp5a5.csv" )
+```
+# Achlioptas Epsilon:0.7
+``` {r message=FALSE}
+set.seed(1)
+rp.rf("result6rp1a7.csv" )
+rp.rf("result6rp2a7.csv" )
+rp.rf("result6rp3a7.csv" )
+rp.rf("result6rp4a7.csv" )
+rp.rf("result6rp5a7.csv" )
+```
+
+

@@ -1,0 +1,429 @@
+---
+title: "epsilon tuning"
+author: "Shanshan Hu"
+date: "7/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(glmnet) # ridge and lasso
+library(gam) # for gam
+library(pls) # pcr pls
+library(leaps) # regsubset
+library(MASS) # lda qda
+library(class) # knn
+library(caret) # knn with prob
+library(gbm) # boosting
+library(boot) # cross validation
+library(car) # vif, residual plots, partial residual plots
+library (ROCR) 
+library (pROC) # ROC AUC plot
+library(tree)
+library(randomForest)
+library(ranger) # Random Forest
+library(neuralnet) # DNN
+library(e1071) # SVM
+library(RandPro) # Random Projection Method 1
+
+library(pryr) # memory count
+library(MatrixModels) # sparse matrix representation
+```
+
+# Calculate dimension for each data
+```{r}
+setwd("D:\\Merck challenge\\qsar_train")
+df1_x = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_15_train_x.csv") 
+df1_y = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_15_train_y.csv") 
+df1=cbind(df1_y,df1_x)
+
+# dimensionality
+d=c(0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9)
+dim=dimension(nrow(df1_x), epsilon = d)
+dim
+
+opdf={}
+```
+
+# Processing time, RMSE, R-squared of random projection for each dimension
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 1968, FALSE, eps = 0.2, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 1310, FALSE, eps = 0.25, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 947, FALSE, eps = 0.3, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 726, FALSE, eps = 0.35, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 581, FALSE, eps = 0.4, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 481, FALSE, eps = 0.45, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 409, FALSE, eps = 0.5, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 356, FALSE, eps = 0.55, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 315, FALSE, eps = 0.6, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 284, FALSE, eps = 0.65, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 261, FALSE, eps = 0.7, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 242, FALSE, eps = 0.75, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 228, FALSE, eps = 0.8, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 217, FALSE, eps = 0.85, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+```{r}
+ptm = proc.time()
+pm=form_matrix(ncol(df1_x), 210, FALSE, eps = 0.9, projection = "achlioptas")
+rp=as.matrix(df1_x)%*%pm
+rpdf=cbind(df1_y,rp)
+
+idx <- sample(nrow(rpdf), 1/5 * nrow(rpdf))
+rpdftr <- rpdf[-idx, ]
+rpdft <- rpdf[idx, ]
+rfmod = ranger(dependent.variable.name = "y",data=rpdftr)
+time_spent = proc.time() - ptm
+  
+preds <- predict(rfmod, data = rpdft)
+rmse <- sqrt(sum((preds$predictions - rpdft$y)^2)/length(preds$predictions))
+rsq <- 1-sum((preds$predictions - rpdft$y)^2)/sum((rpdft$y - mean(rpdft$y))^2)
+  
+opdf=rbind(opdf,c(RMSE=rmse,RSquared=rsq,Time=time_spent[3]))
+```
+
+# Write output files
+```{r}
+write.csv(opdf,"15RfSparseBestEpsilon.csv")
+```
+
+```{r}
+library(readxl)
+setwd("D:\\Merck challenge\\qsar_ep")
+
+ep1 = read_csv("D:\\Merck challenge\\qsar_ep\\1RfSparseBestEpsilon.csv")
+ep2 = read_csv("D:\\Merck challenge\\qsar_ep\\2RfSparseBestEpsilon.csv")
+ep3 = read_csv("D:\\Merck challenge\\qsar_ep\\3RfSparseBestEpsilon.csv")
+ep4 = read_csv("D:\\Merck challenge\\qsar_ep\\4RfSparseBestEpsilon.csv")
+ep5 = read_csv("D:\\Merck challenge\\qsar_ep\\5RfSparseBestEpsilon.csv")
+ep6 = read_csv("D:\\Merck challenge\\qsar_ep\\6RfSparseBestEpsilon.csv")
+ep7 = read_csv("D:\\Merck challenge\\qsar_ep\\7RfSparseBestEpsilon.csv")
+ep8 = read_csv("D:\\Merck challenge\\qsar_ep\\8RfSparseBestEpsilon.csv")
+ep9 = read_csv("D:\\Merck challenge\\qsar_ep\\9RfSparseBestEpsilon.csv")
+ep10 = read_csv("D:\\Merck challenge\\qsar_ep\\10RfSparseBestEpsilon.csv")
+ep11 = read_csv("D:\\Merck challenge\\qsar_ep\\11RfSparseBestEpsilon.csv")
+ep12 = read_csv("D:\\Merck challenge\\qsar_ep\\12RfSparseBestEpsilon.csv")
+ep13 = read_csv("D:\\Merck challenge\\qsar_ep\\13RfSparseBestEpsilon.csv")
+ep14 = read_csv("D:\\Merck challenge\\qsar_ep\\14RfSparseBestEpsilon.csv")
+ep15 = read_csv("D:\\Merck challenge\\qsar_ep\\15RfSparseBestEpsilon.csv")
+```
+
+```{r}
+# rmse
+epdf={}
+epdf=cbind(data1=ep1$RMSE,data2=ep2$RMSE)
+epdf=cbind(epdf,data3=ep3$RMSE)
+epdf=cbind(epdf,data4=ep4$RMSE)
+epdf=cbind(epdf,data5=ep5$RMSE)
+epdf=cbind(epdf,data6=ep6$RMSE)
+epdf=cbind(epdf,data7=ep7$RMSE)
+epdf=cbind(epdf,data8=ep8$RMSE)
+epdf=cbind(epdf,data9=ep9$RMSE)
+epdf=cbind(epdf,data10=ep10$RMSE)
+epdf=cbind(epdf,data11=ep11$RMSE)
+epdf=cbind(epdf,data12=ep12$RMSE)
+epdf=cbind(epdf,data13=ep13$RMSE)
+epdf=cbind(epdf,data14=ep14$RMSE)
+epdf=cbind(epdf,data15=ep15$RMSE)
+```
+
+```{r}
+# r^2
+epdfr={}
+epdfr=cbind(data1=ep1$RSquared,data2=ep2$RSquared)
+epdfr=cbind(epdfr,data3=ep3$RSquared)
+epdfr=cbind(epdfr,data4=ep4$RSquared)
+epdfr=cbind(epdfr,data5=ep5$RSquared)
+epdfr=cbind(epdfr,data6=ep6$RSquared)
+epdfr=cbind(epdfr,data7=ep7$RSquared)
+epdfr=cbind(epdfr,data8=ep8$RSquared)
+epdfr=cbind(epdfr,data9=ep9$RSquared)
+epdfr=cbind(epdfr,data10=ep10$RSquared)
+epdfr=cbind(epdfr,data11=ep11$RSquared)
+epdfr=cbind(epdfr,data12=ep12$RSquared)
+epdfr=cbind(epdfr,data13=ep13$RSquared)
+epdfr=cbind(epdfr,data14=ep14$RSquared)
+epdfr=cbind(epdfr,data15=ep15$RSquared)
+```
+
+```{r}
+# time
+epdft={}
+epdft=cbind(data1=ep1$Time.elapsed,data2=ep2$Time.elapsed)
+epdft=cbind(epdft,data3=ep3$Time.elapsed)
+epdft=cbind(epdft,data4=ep4$Time.elapsed)
+epdft=cbind(epdft,data5=ep5$Time.elapsed)
+epdft=cbind(epdft,data6=ep6$Time.elapsed)
+epdft=cbind(epdft,data7=ep7$Time.elapsed)
+epdft=cbind(epdft,data8=ep8$Time.elapsed)
+epdft=cbind(epdft,data9=ep9$Time.elapsed)
+epdft=cbind(epdft,data10=ep10$Time.elapsed)
+epdft=cbind(epdft,data11=ep11$Time.elapsed)
+epdft=cbind(epdft,data12=ep12$Time.elapsed)
+epdft=cbind(epdft,data13=ep13$Time.elapsed)
+epdft=cbind(epdft,data14=ep14$Time.elapsed)
+epdft=cbind(epdft,data15=ep15$Time.elapsed)
+```
+
+```{r}
+write.csv(epdf,"rmseRfSparseEP.csv")
+write.csv(epdfr,"rsqRfSparseEP.csv")
+write.csv(epdft,"timeRfSparseEP.csv")
+```
+
+
+
+
+
+

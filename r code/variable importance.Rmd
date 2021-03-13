@@ -1,0 +1,95 @@
+---
+title: '0607'
+author: "Shanshan Hu"
+date: "6/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(glmnet) # ridge and lasso
+library(gam) # for gam
+library(pls) # pcr pls
+library(leaps) # regsubset
+library(MASS) # lda qda
+library(class) # knn
+library(caret) # knn with prob
+library(gbm) # boosting
+library(boot) # cross validation
+library(car) # vif, residual plots, partial residual plots
+library (ROCR) 
+library (pROC) # ROC AUC plot
+library(tree)
+library(randomForest)
+library(ranger) # Random Forest
+library(neuralnet) # DNN
+library(e1071) # SVM
+library(RandPro) # Random Projection Method 1
+
+library(pryr) # memory count
+library(MatrixModels) # sparse matrix representation
+```
+
+```{r}
+setwd("D:\\Merck challenge\\qsar_train")
+x = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_7_train_x.csv") 
+y = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_7_train_y.csv") 
+df=cbind(y,x)
+ptm = proc.time()
+rf.cv0=rfcv(df[,-1],df$y,cv.fold = 5)
+time_spent = proc.time() - ptm
+
+rf.cv0$error.cv
+time_spent[3]
+
+fit0=randomForest(y~., data=df, importance=TRUE)
+VI_F1=randomForest::importance(fit0,type=1)
+VI_F2=randomForest::importance(fit0,type=2)
+order(-VI_F1)[1:34]
+order(-VI_F2)[1:34]
+```
+
+# Achlioptas Epsilon:0.7
+``` {r message=FALSE}
+set.seed(1)
+setwd("D:\\Merck challenge\\qsar_rp")
+df1_x = read_csv("result7rp1a7.csv")
+df1_x=df1_x[,-1]
+df1=cbind(y,df1_x)
+  
+ptm = proc.time()
+rf.cvrp=rfcv(df1[,-1],df1$y,cv.fold = 5)
+time_spent = proc.time() - ptm
+  
+fit=randomForest(y~., data=df1, importance=TRUE)
+VI_F=randomForest::importance(fit,type=1)
+  
+time_spent
+sqrt(rf.cvrp$error.cv) # RMSE determine the dimension necessary
+
+rpm=read_csv("7rp1a7.csv")
+rpm=rpm[,-1]
+
+pm.indx=order(-VI_F)[1:14] 
+coef.mx=rpm[,pm.indx] 
+coef.mx=apply(coef.mx,2,function(x){x/sum(abs(x))}) # scale all variables
+
+order(-rowSums(abs(coef.mx)))[1:34]
+intersect(order(-rowSums(abs(coef.mx)))[1:34],order(-VI_F1)[1:34])
+```
+# 100 transformation matrices and found the most important variables by repeating the process of calculate the loadings of original data. Then comparing variables from the largest 34 averaged loadings.
+``` {r message=FALSE}
+set.seed(1)
+tm_a={}
+for (i in 1:100) {
+  tm=form_matrix(ncol(x), 225, FALSE, eps = 0.7, projection = "achlioptas")
+  tm=apply(tm,2,function(x){x/sum(abs(x))}) # scale all variables
+  tm_a=cbind(tm_a,tm)
+  }
+
+order(-rowSums(abs(tm_a)))[1:34]
+intersect(order(-rowSums(abs(tm_a)))[1:34],order(-VI_F1)[1:34])
+```
+

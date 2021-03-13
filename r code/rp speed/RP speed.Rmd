@@ -1,0 +1,145 @@
+---
+title: "RP result"
+author: "Shanshan Hu"
+date: "7/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggthemes)
+library(glmnet) # ridge and lasso
+library(gam) # for gam
+library(pls) # pcr pls
+library(leaps) # regsubset
+library(MASS) # lda qda
+library(class) # knn
+library(caret) # knn with prob
+library(gbm) # boosting
+library(boot) # cross validation
+library(car) # vif, residual plots, partial residual plots
+library (ROCR) 
+library (pROC) # ROC AUC plot
+library(tree)
+library(randomForest)
+library(ranger) # Random Forest
+library(neuralnet) # DNN
+library(e1071) # SVM
+library(RandPro) # Random Projection Method 1
+
+library(pryr) # memory count
+library(MatrixModels) # sparse matrix representation
+```
+
+```{r}
+setwd("D:\\Merck challenge\\qsar_train")
+df1_x = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_6_train_x.csv") 
+df1_y = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_6_train_y.csv") 
+df1=cbind(df1_y,df1_x)
+```
+
+# Random Projection
+```{r}
+# dimensionality
+d=c(0.1,0.3,0.5,0.7)
+dim=dimension(nrow(df1_x), epsilon = d)
+dim
+```
+
+# Output for random projection matrix, transformation matrix and processing time. 
+```{r}
+rp.csv <- function(ncols,epsilon,method="gaussian",fname,rfname){
+  ptm = proc.time()
+  rp11=form_matrix(ncol(df1_x), ncols, FALSE, eps = epsilon, projection = method)
+  rrp11=as.matrix(df1_x)%*%rp11
+  write.csv(rp11,fname)
+  write.csv(rrp11,rfname)
+  rp11df=cbind(df1_y,rrp11)
+  time_spent = proc.time() - ptm
+  paste("Processing time:", round(time_spent[3]),"seconds")
+  return (time_spent)
+  }
+```
+# Gaussian Dimension:1169 Epsilon:0.3
+```{r}
+set.seed(1)
+rp.csv(1169,0.3,"gaussian","6rp1g3.csv","result6rp1g3.csv")
+rp.csv(1169,0.3,"gaussian","6rp2g3.csv","result6rp2g3.csv")
+rp.csv(1169,0.3,"gaussian","6rp3g3.csv","result6rp3g3.csv")
+rp.csv(1169,0.3,"gaussian","6rp4g3.csv","result6rp4g3.csv")
+rp.csv(1169,0.3,"gaussian","6rp5g3.csv","result6rp5g3.csv")
+```
+# Gaussian Dimension:505 Epsilon:0.5
+```{r}
+set.seed(1)
+rp.csv(505,0.5,"gaussian","6rp1g5.csv","result6rp1g5.csv")
+rp.csv(505,0.5,"gaussian","6rp2g5.csv","result6rp2g5.csv")
+rp.csv(505,0.5,"gaussian","6rp3g5.csv","result6rp3g5.csv")
+rp.csv(505,0.5,"gaussian","6rp4g5.csv","result6rp4g5.csv")
+rp.csv(505,0.5,"gaussian","6rp5g5.csv","result6rp5g5.csv")
+```   
+# Gaussian Dimension:322 Epsilon:0.7
+```{r}
+set.seed(1)
+rp.csv(322,0.7,"gaussian","6rp1g7.csv","result6rp1g7.csv")
+rp.csv(322,0.7,"gaussian","6rp2g7.csv","result6rp2g7.csv")
+rp.csv(322,0.7,"gaussian","6rp3g7.csv","result6rp3g7.csv")
+rp.csv(322,0.7,"gaussian","6rp4g7.csv","result6rp4g7.csv")
+rp.csv(322,0.7,"gaussian","6rp5g7.csv","result6rp5g7.csv")
+```
+# Probability Dimension:1169 Epsilon:0.3
+```{r}
+set.seed(1)
+rp.csv(1169,0.3,"probability","6rp1p3.csv","result6rp1p3.csv")
+rp.csv(1169,0.3,"probability","6rp2p3.csv","result6rp2p3.csv")
+rp.csv(1169,0.3,"probability","6rp3p3.csv","result6rp3p3.csv")
+rp.csv(1169,0.3,"probability","6rp4p3.csv","result6rp4p3.csv")
+rp.csv(1169,0.3,"probability","6rp5p3.csv","result6rp5p3.csv")
+```
+#  Probability Dimension:505 Epsilon:0.5
+```{r}
+set.seed(1)
+rp.csv(505,0.5,"probability","6rp1p5.csv","result6rp1p5.csv")
+rp.csv(505,0.5,"probability","6rp2p5.csv","result6rp2p5.csv")
+rp.csv(505,0.5,"probability","6rp3p5.csv","result6rp3p5.csv")
+rp.csv(505,0.5,"probability","6rp4p5.csv","result6rp4p5.csv")
+rp.csv(505,0.5,"probability","6rp5p5.csv","result6rp5p5.csv")
+```   
+# Probability Dimension:322 Epsilon:0.7
+```{r}
+set.seed(1)
+rp.csv(322,0.7,"probability","6rp1p7.csv","result6rp1p7.csv")
+rp.csv(322,0.7,"probability","6rp2p7.csv","result6rp2p7.csv")
+rp.csv(322,0.7,"probability","6rp3p7.csv","result6rp3p7.csv")
+rp.csv(322,0.7,"probability","6rp4p7.csv","result6rp4p7.csv")
+rp.csv(322,0.7,"probability","6rp5p7.csv","result6rp5p7.csv")
+```
+# Achlioptas Dimension:1169 Epsilon:0.3
+```{r}
+set.seed(1)
+rp.csv(1169,0.3,"achlioptas","6rp1a3.csv","result6rp1a3.csv")
+rp.csv(1169,0.3,"achlioptas","6rp2a3.csv","result6rp2a3.csv")
+rp.csv(1169,0.3,"achlioptas","6rp3a3.csv","result6rp3a3.csv")
+rp.csv(1169,0.3,"achlioptas","6rp4a3.csv","result6rp4a3.csv")
+rp.csv(1169,0.3,"achlioptas","6rp5a3.csv","result6rp5a3.csv")
+```
+# Achlioptas Dimension:505 Epsilon:0.5
+```{r}
+set.seed(1)
+rp.csv(505,0.5,"achlioptas","6rp1a5.csv","result6rp1a5.csv")
+rp.csv(505,0.5,"achlioptas","6rp2a5.csv","result6rp2a5.csv")
+rp.csv(505,0.5,"achlioptas","6rp3a5.csv","result6rp3a5.csv")
+rp.csv(505,0.5,"achlioptas","6rp4a5.csv","result6rp4a5.csv")
+rp.csv(505,0.5,"achlioptas","6rp5a5.csv","result6rp5a5.csv")
+```   
+# Achlioptas Dimension:322 Epsilon:0.7
+```{r}
+set.seed(1)
+rp.csv(322,0.7,"achlioptas","6rp1a7.csv","result6rp1a7.csv")
+rp.csv(322,0.7,"achlioptas","6rp2a7.csv","result6rp2a7.csv")
+rp.csv(322,0.7,"achlioptas","6rp3a7.csv","result6rp3a7.csv")
+rp.csv(322,0.7,"achlioptas","6rp4a7.csv","result6rp4a7.csv")
+rp.csv(322,0.7,"achlioptas","6rp5a7.csv","result6rp5a7.csv")
+```
+

@@ -1,0 +1,93 @@
+---
+title: "no rp svm"
+author: "Zhengwei Kang"
+date: "2020/7/24"
+output: html_document
+---
+
+```{r}
+library(lattice)
+library(e1071)
+library(pryr)
+library(MatrixModels)
+library(RandPro)
+library(plyr)
+setwd("D:\\Merck challenge\\qsar_train")
+train4x = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_4_train_x.csv") 
+train4y = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_4_train_y.csv") 
+train4=cbind(train4y,train4x)
+setwd("D:\\Merck challenge\\qsar_rp")
+train4rp = read_csv("result4rp1g3.csv")
+
+ptm = proc.time()
+tc <- tune.control(cross = 5)
+
+svmtune = tune.svm(y~.,data=train4,kernel ="linear", 
+              ranges =list(epsilon = seq(0, 5, 0.1),cost=c(0.001,0.01,0.1, 1,5,10,100)),tunecontrol = tc)
+summary(svmtune)
+time_spent = proc.time() - ptm
+# svm(y~.,data=train4,kernel ="linear", ranges =list(epsilon = seq(0, 5, 0.01),cost=c(0.001,0.01,0.1, 1,5,10,100))) no
+```
+
+```{r}
+k=5
+datasize=nrow(train4)
+CVgroup <- function(k,datasize,seed){
+  cvlist <- list()
+  set.seed(seed)
+  n <- rep(1:k,ceiling(datasize/k))[1:datasize]    
+  temp <- sample(n,datasize)   
+  x <- 1:k
+  dataseq <- 1:datasize
+  cvlist <- lapply(x,function(x) dataseq[temp==x])  
+  return(cvlist)
+}
+
+cvlist=CVgroup(k=k,datasize = datasize,seed=4)
+RMSE=c()
+data=train4
+ptm = proc.time()
+ for (i in 1:k){
+    train <- data[-cvlist[[i]],]  
+    test <- data[cvlist[[i]],]
+    svmmod= svm(y~.,data = train)
+    preds <- predict(svmmod, data = test)
+    rmse <- sqrt(sum((preds - test$y)^2)/length(preds))
+    RMSE[i]=rmse
+ }
+time_spent = proc.time() - ptm
+paste("Processing time:", round(time_spent[3]),"seconds")
+RMSE
+mean(RMSE)
+```
+
+```{r}
+library(lattice)
+library(e1071)
+library(pryr)
+library(MatrixModels)
+library(RandPro)
+library(plyr)
+library(caret)
+setwd("D:\\Merck challenge\\qsar_train")
+train4x = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_4_train_x.csv") 
+train4y = read_csv("D:\\Merck challenge\\qsar_train\\QSAR_4_train_y.csv") 
+train4=cbind(train4y,train4x)
+
+# in creating the folds we specify the target feature (dependent variable) and # of folds
+folds = createFolds(train4$y, k = 5)
+# in cv we are going to applying a created function to our 'folds'
+cv = lapply(folds, function(x) { # start of function
+  # in the next two lines we will separate the Training set into it's 10 pieces
+  training_fold = train4[-x, ] # training fold =  training set minus (-) it's sub test fold
+  test_fold = train4[x, ] # here we describe the test fold individually
+  # now apply (train) the classifer on the training_fold
+  classifier = svm(y ~ .,data = training_fold)
+  # next step in the loop, we calculate the predictions and cm and we equate the accuracy
+  # note we are training on training_fold and testing its accuracy on the test_fold
+  preds = predict(classifier, data = test_fold)
+  rmse <- sqrt(sum((preds - test_fold$y)^2)/length(preds))
+  return(rmse)
+})
+```
+
